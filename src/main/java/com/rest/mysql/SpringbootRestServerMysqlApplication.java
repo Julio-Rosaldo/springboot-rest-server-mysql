@@ -1,4 +1,4 @@
-package com.restserver.mysql;
+package com.rest.mysql;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
