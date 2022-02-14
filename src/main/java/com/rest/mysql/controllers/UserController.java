@@ -115,19 +115,6 @@ public class UserController {
 		return response;
 	}
 
-	/*
-	 * @PutMapping(value = "/users/{id}") public ResponseEntity<User>
-	 * insertUser(@PathVariable(name = "id", required = true) String id,
-	 * 
-	 * @RequestBody User payload) { User user = userTemplate.insertUser(id,
-	 * payload);
-	 * 
-	 * ResponseEntity<User> response = null; if (user == null) { response = new
-	 * ResponseEntity<User>(null, null, HttpStatus.INTERNAL_SERVER_ERROR); } else {
-	 * response = new ResponseEntity<User>(user, null, HttpStatus.OK); } return
-	 * response; }
-	 */
-
 	@PatchMapping(value = "/users/{id}")
 	public ResponseEntity<ResponseData> updateUser(@PathVariable(name = "id", required = true) String id,
 			@RequestBody(required = true) User payload) {
