@@ -27,33 +27,22 @@ import com.rest.mysql.entities.User;
 public class UserController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
-
-	private static final String NOT_FOUND_CODE = "EmptyResultDataAccessException";
-	private static final String DB_ACCESS_CODE = "DataAccessException";
-
+	
 	@Autowired
 	UserTemplate userTemplate;
 
 	@GetMapping(value = "/users")
 	public ResponseEntity<ResponseListData> listUsers(
+			@RequestParam(name = "page", required = false) Long page,
+			@RequestParam(name = "pageSize", required = false) Long pageSize,
+			@RequestParam(name = "email", required = false) String email,
 			@RequestParam(name = "userInfo.name", required = false) String userInfoName) {
 
-		LOGGER.info(userInfoName);
-
-		ResponseListData data = null;
-		if (userInfoName != null) {
-			data = userTemplate.listUsersByName(userInfoName);
-		} else {
-			data = userTemplate.listUsers();
-		}
+		ResponseListData data = userTemplate.listUsers(page, pageSize, email, userInfoName);
 
 		HttpStatus status = null;
 		if (data.getError() != null) {
-			if (data.getError().getCode().equals(DB_ACCESS_CODE)) {
-				status = HttpStatus.SERVICE_UNAVAILABLE;
-			} else {
-				status = HttpStatus.INTERNAL_SERVER_ERROR;
-			}
+			status = data.getError().getStatus();
 		} else if (data.getData() == null || data.getData().isEmpty()) {
 			status = HttpStatus.NO_CONTENT;
 		} else {
@@ -73,13 +62,7 @@ public class UserController {
 
 		HttpStatus status = null;
 		if (data.getError() != null) {
-			if (data.getError().getCode().equals(NOT_FOUND_CODE)) {
-				status = HttpStatus.NOT_FOUND;
-			} else if (data.getError().getCode().equals(DB_ACCESS_CODE)) {
-				status = HttpStatus.SERVICE_UNAVAILABLE;
-			} else {
-				status = HttpStatus.INTERNAL_SERVER_ERROR;
-			}
+			status = data.getError().getStatus();
 		} else {
 			status = HttpStatus.OK;
 		}
@@ -100,13 +83,7 @@ public class UserController {
 
 		HttpStatus status = null;
 		if (data.getError() != null) {
-			if (data.getError().getCode().equals("DuplicateKeyException")) {
-				status = HttpStatus.BAD_REQUEST;
-			} else if (data.getError().getCode().equals(DB_ACCESS_CODE)) {
-				status = HttpStatus.SERVICE_UNAVAILABLE;
-			} else {
-				status = HttpStatus.INTERNAL_SERVER_ERROR;
-			}
+			status = data.getError().getStatus();
 		} else {
 			status = HttpStatus.CREATED;
 		}
@@ -119,17 +96,11 @@ public class UserController {
 	public ResponseEntity<ResponseData> updateUser(@PathVariable(name = "id", required = true) String id,
 			@RequestBody(required = true) User payload) {
 
-		ResponseData data = userTemplate.updateUser(id, payload);
+		ResponseData data = userTemplate.updateUser(id, payload, false);
 
 		HttpStatus status = null;
 		if (data.getError() != null) {
-			if (data.getError().getCode().equals(NOT_FOUND_CODE)) {
-				status = HttpStatus.NOT_FOUND;
-			} else if (data.getError().getCode().equals(DB_ACCESS_CODE)) {
-				status = HttpStatus.SERVICE_UNAVAILABLE;
-			} else {
-				status = HttpStatus.INTERNAL_SERVER_ERROR;
-			}
+			status = data.getError().getStatus();
 		} else {
 			status = HttpStatus.OK;
 		}
@@ -144,13 +115,7 @@ public class UserController {
 
 		HttpStatus status = null;
 		if (data.getError() != null) {
-			if (data.getError().getCode().equals(NOT_FOUND_CODE)) {
-				status = HttpStatus.NOT_FOUND;
-			} else if (data.getError().getCode().equals(DB_ACCESS_CODE)) {
-				status = HttpStatus.SERVICE_UNAVAILABLE;
-			} else {
-				status = HttpStatus.INTERNAL_SERVER_ERROR;
-			}
+			status = data.getError().getStatus();
 		} else {
 			status = HttpStatus.NO_CONTENT;
 		}

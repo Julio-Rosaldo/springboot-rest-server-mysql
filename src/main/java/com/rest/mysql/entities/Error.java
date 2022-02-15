@@ -1,21 +1,32 @@
 package com.rest.mysql.entities;
 
+import org.springframework.http.HttpStatus;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ResponseError {
-
-	private String code;
+public class Error {
+	
+	private String name;
 	private String message;
+	private HttpStatus status;
 
-	public String getCode() {
-		return code;
+	public HttpStatus getStatus() {
+		return status;
 	}
 
-	public void setCode(String code) {
-		this.code = code;
+	public void setStatus(HttpStatus status) {
+		this.status = status;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getMessage() {
@@ -28,7 +39,7 @@ public class ResponseError {
 
 	@Override
 	public String toString() {
-		return "ResponseError [code=" + code + ", message=" + message + "]";
+		return "Error [status=" + status + ", name=" + name + ", message=" + message + "]";
 	}
 
 }

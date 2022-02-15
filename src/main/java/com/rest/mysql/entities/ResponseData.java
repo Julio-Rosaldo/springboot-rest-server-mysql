@@ -7,22 +7,22 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseData {
 
-	private User data;
-	private ResponseError error;
+	private Object data;
+	private Error error;
 
-	public User getData() {
+	public Object getData() {
 		return data;
 	}
 
-	public void setData(User data) {
+	public void setData(Object data) {
 		this.data = data;
 	}
 
-	public ResponseError getError() {
+	public Error getError() {
 		return error;
 	}
 
-	public void setError(ResponseError error) {
+	public void setError(Error error) {
 		this.error = error;
 	}
 
