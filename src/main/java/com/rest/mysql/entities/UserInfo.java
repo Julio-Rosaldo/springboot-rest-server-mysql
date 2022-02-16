@@ -1,5 +1,8 @@
 package com.rest.mysql.entities;
 
+import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -9,7 +12,8 @@ public class UserInfo {
 
 	private String name;
 	private String lastName;
-	private String birthday;
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+	private Date birthday;
 	private String gender;
 
 	public String getName() {
@@ -28,11 +32,11 @@ public class UserInfo {
 		this.lastName = lastName;
 	}
 
-	public String getBirthday() {
+	public Date getBirthday() {
 		return birthday;
 	}
 
-	public void setBirthday(String birthday) {
+	public void setBirthday(Date birthday) {
 		this.birthday = birthday;
 	}
 

@@ -1,11 +1,7 @@
 package com.rest.mysql.daos;
 
-import java.sql.Date;
 import java.sql.Types;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,89 +21,17 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import com.rest.mysql.entities.ResponseData;
 import com.rest.mysql.entities.Error;
-import com.rest.mysql.entities.Pagination;
-import com.rest.mysql.entities.References;
 import com.rest.mysql.entities.ResponseListData;
 import com.rest.mysql.entities.User;
-import com.rest.mysql.entities.UserInfo;
 
 @Repository
 public class UserTemplateImpl implements UserTemplate {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UserTemplateImpl.class);
-
-	private static final DateFormat FORMATTER = new SimpleDateFormat("yyyy-MM-dd");
-
 	@Autowired
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-	private User createUserObject(Map<String, Object> map) {
-
-		User user = new User();
-		user.setId((String) map.get("id"));
-		user.setEmail((String) map.get("email"));
-		user.setIsActive((boolean) map.get("is_active"));
-
-		String roles = (String) map.get("roles");
-		if (roles != null && !roles.isEmpty()) {
-			user.setRoles(Arrays.asList(roles.split(",")));
-		}
-
-		UserInfo userInfo = new UserInfo();
-		userInfo.setName((String) map.get("name"));
-		userInfo.setLastName((String) map.get("last_name"));
-
-		Date date = (Date) map.get("birthday");
-		if (date != null) {
-			userInfo.setBirthday(FORMATTER.format(date));
-		}
-
-		userInfo.setGender((String) map.get("gender"));
-
-		user.setUserInfo(userInfo);
-
-		return user;
-	}
-
-	private MapSqlParameterSource createUserMap(User user) {
-		MapSqlParameterSource parameters = new MapSqlParameterSource();
-
-		parameters.addValue("email", user.getEmail(), Types.VARCHAR);
-
-		String roles = null;
-		if (user.getRoles() != null) {
-			StringBuilder stringBuilder = new StringBuilder();
-			for (String role : user.getRoles()) {
-				if (!role.isEmpty()) {
-					stringBuilder.append(",");
-					stringBuilder.append(role);
-				}
-			}
-			if (stringBuilder.length() > 0) {
-				roles = stringBuilder.toString().substring(1);
-			}
-		}
-		parameters.addValue("roles", roles, Types.VARCHAR);
-
-		parameters.addValue("is_active", user.getIsActive(), Types.BOOLEAN);
-
-		String name = null;
-		String last_name = null;
-		String birthday = null;
-		String gender = null;
-		if (user.getUserInfo() != null) {
-			name = user.getUserInfo().getName();
-			last_name = user.getUserInfo().getLastName();
-			birthday = user.getUserInfo().getBirthday();
-			gender = user.getUserInfo().getGender();
-		}
-		parameters.addValue("name", name, Types.VARCHAR);
-		parameters.addValue("last_name", last_name, Types.VARCHAR);
-		parameters.addValue("birthday", birthday, Types.VARCHAR);
-		parameters.addValue("gender", gender, Types.VARCHAR);
-
-		return parameters;
-	}
+	@SuppressWarnings("unused")
+	private static final Logger LOGGER = LoggerFactory.getLogger(UserTemplateImpl.class);
 
 	private static final String COUNT_ALL = "SELECT COUNT(*) AS COUNT FROM users ";
 	private static final String FIND_ALL = "SELECT * FROM users ";
@@ -164,30 +88,11 @@ public class UserTemplateImpl implements UserTemplate {
 
 			List<Object> listUsers = new ArrayList<>();
 			for (Map<String, Object> map : listMap) {
-				listUsers.add(createUserObject(map));
+				listUsers.add(UserConvertionHelper.createUserObject(map));
 			}
 
 			if (!listUsers.isEmpty()) {
-				Double totalPagesAux = Math.ceil(totalElements.doubleValue() / pageSize.doubleValue());
-				Long totalPages = totalPagesAux.longValue();
-
-				Long lastPage = page.equals(totalPages - 1L) ? null : (totalPages - 1L);
-				Long nextPage = page.equals(totalPages - 1L) ? null : (page + 1L);
-				Long previousPage = page.equals(0L) ? null : (page - 1L);
-
-				References references = new References();
-				references.setLastPage(lastPage);
-				references.setNextPage(nextPage);
-				references.setPreviousPage(previousPage);
-
-				Pagination pagination = new Pagination();
-				pagination.setReferences(references);
-				pagination.setPage(page);
-				pagination.setTotalPages(totalPages);
-				pagination.setTotalElements(totalElements);
-				pagination.setPageSize(pageSize);
-
-				data.setPagination(pagination);
+				data.setPagination(UserConvertionHelper.createPagination(page, pageSize, totalElements));
 			}
 
 			data.setData(listUsers);
@@ -198,8 +103,7 @@ public class UserTemplateImpl implements UserTemplate {
 			error.setStatus(HttpStatus.SERVICE_UNAVAILABLE);
 			data.setError(error);
 		}
-
-		LOGGER.info("Data: {}", data);
+		
 		return data;
 	}
 
@@ -214,7 +118,7 @@ public class UserTemplateImpl implements UserTemplate {
 
 		try {
 			Map<String, Object> result = namedParameterJdbcTemplate.queryForMap(FIND_BY_ID, query);
-			data.setData(createUserObject(result));
+			data.setData(UserConvertionHelper.createUserObject(result));
 		} catch (EmptyResultDataAccessException e) {
 			Error error = new Error();
 			error.setName(e.getClass().getSimpleName());
@@ -233,14 +137,14 @@ public class UserTemplateImpl implements UserTemplate {
 	}
 
 	private static final String GENERATE_UUID = "SELECT UUID() AS ID;";
-	private static final String CREATE_USER = "INSERT INTO users (id, email, roles, is_active, name, last_name, birthday, gender)"
-			+ " VALUES (:id, :email, :roles, :is_active, :name, :last_name, :birthday, :gender);";
+	private static final String CREATE_USER = "INSERT INTO users (id, email, roles, is_active, name, last_name, birthday, gender) "
+			+ "VALUES (:id, :email, :roles, :is_active, :name, :last_name, :birthday, :gender);";
 
 	@Override
 	public ResponseData createUser(User user) {
 		ResponseData data = new ResponseData();
 
-		MapSqlParameterSource query = createUserMap(user);
+		MapSqlParameterSource query = UserConvertionHelper.createUserMap(user);
 		try {
 			String id = namedParameterJdbcTemplate.queryForObject(GENERATE_UUID, new HashMap<>(), String.class);
 			query.addValue("id", id, Types.VARCHAR);
@@ -249,7 +153,9 @@ public class UserTemplateImpl implements UserTemplate {
 			if (result == 1) {
 				return getUser(id);
 			} else {
-
+				throw new DataAccessException("Connector error") {
+					private static final long serialVersionUID = 6981224632546830983L;
+				};
 			}
 		} catch (DuplicateKeyException e) {
 			Error error = new Error();
@@ -277,7 +183,7 @@ public class UserTemplateImpl implements UserTemplate {
 	public ResponseData updateUser(String id, User user, boolean rollback) {
 		ResponseData data = new ResponseData();
 
-		MapSqlParameterSource query = createUserMap(user);
+		MapSqlParameterSource query = UserConvertionHelper.createUserMap(user);
 		query.addValue("id", id, Types.VARCHAR);
 
 		try {
@@ -287,10 +193,37 @@ public class UserTemplateImpl implements UserTemplate {
 				throw new DataAccessException("Operation rolled back") {
 					private static final long serialVersionUID = 6981224632546830983L;
 				};
-			}
-			else if (result == 1) {
+			} else if (result == 1) {
 				return getUser(id);
 			} else {
+				throw new EmptyResultDataAccessException(1);
+			}
+		} catch (EmptyResultDataAccessException e) {
+			Error error = new Error();
+			error.setName(e.getClass().getSimpleName());
+			error.setMessage(e.getMessage());
+			error.setStatus(HttpStatus.NOT_FOUND);
+			data.setError(error);
+		} catch (DataAccessException e) {
+			Error error = new Error();
+			error.setName(e.getClass().getSimpleName());
+			error.setMessage(e.getMessage());
+			error.setStatus(HttpStatus.SERVICE_UNAVAILABLE);
+			data.setError(error);
+		}
+
+		return data;
+	}
+
+	private static final String DELETE_ALL_USERS = "DELETE FROM users;";
+
+	@Override
+	public ResponseData deleteUsers() {
+		ResponseData data = new ResponseData();
+
+		try {
+			int result = namedParameterJdbcTemplate.update(DELETE_ALL_USERS, new HashMap<>());
+			if (result == 0) {
 				throw new EmptyResultDataAccessException(1);
 			}
 		} catch (EmptyResultDataAccessException e) {
@@ -321,7 +254,7 @@ public class UserTemplateImpl implements UserTemplate {
 
 		try {
 			int result = namedParameterJdbcTemplate.update(DELETE_USER, query);
-			if (result != 1) {
+			if (result == 0) {
 				throw new EmptyResultDataAccessException(1);
 			}
 		} catch (EmptyResultDataAccessException e) {

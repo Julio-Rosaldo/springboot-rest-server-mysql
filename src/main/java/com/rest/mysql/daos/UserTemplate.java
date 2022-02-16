@@ -13,6 +13,8 @@ public interface UserTemplate {
 	public ResponseData createUser(User user);
 
 	public ResponseData updateUser(String id, User user, boolean rollback);
+	
+	public ResponseData deleteUsers();
 
 	public ResponseData deleteUser(String id);
 }

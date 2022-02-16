@@ -27,13 +27,12 @@ import com.rest.mysql.entities.User;
 public class UserController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
-	
+
 	@Autowired
 	UserTemplate userTemplate;
 
 	@GetMapping(value = "/users")
-	public ResponseEntity<ResponseListData> listUsers(
-			@RequestParam(name = "page", required = false) Long page,
+	public ResponseEntity<ResponseListData> listUsers(@RequestParam(name = "page", required = false) Long page,
 			@RequestParam(name = "pageSize", required = false) Long pageSize,
 			@RequestParam(name = "email", required = false) String email,
 			@RequestParam(name = "userInfo.name", required = false) String userInfoName) {
@@ -77,7 +76,6 @@ public class UserController {
 
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Custom-Header", "foo");
-		responseHeaders.add("Content-Type", "application/json");
 
 		ResponseData data = userTemplate.createUser(payload);
 
@@ -103,6 +101,21 @@ public class UserController {
 			status = data.getError().getStatus();
 		} else {
 			status = HttpStatus.OK;
+		}
+
+		ResponseEntity<ResponseData> response = new ResponseEntity<ResponseData>(data, null, status);
+		return response;
+	}
+
+	@DeleteMapping(value = "/users")
+	public ResponseEntity<ResponseData> deleteUsers() {
+		ResponseData data = userTemplate.deleteUsers();
+
+		HttpStatus status = null;
+		if (data.getError() != null) {
+			status = data.getError().getStatus();
+		} else {
+			status = HttpStatus.NO_CONTENT;
 		}
 
 		ResponseEntity<ResponseData> response = new ResponseEntity<ResponseData>(data, null, status);
