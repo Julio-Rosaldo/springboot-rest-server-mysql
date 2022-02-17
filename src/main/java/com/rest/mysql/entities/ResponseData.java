@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseData {
 
-	private Object data;
+	private User data;
 	private Error error;
 
-	public Object getData() {
+	public User getData() {
 		return data;
 	}
 
-	public void setData(Object data) {
+	public void setData(User data) {
 		this.data = data;
 	}
 

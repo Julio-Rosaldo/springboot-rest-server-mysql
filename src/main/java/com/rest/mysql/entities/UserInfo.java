@@ -12,6 +12,9 @@ public class UserInfo {
 
 	private String name;
 	private String lastName;
+	// Actually, jackson takes the input/output as UTC timezone and converts it to
+	// system timezone, also the spring data mongoDB repository do the same
+	// convertion and stores dates in UTC timezone
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 	private Date birthday;
 	private String gender;

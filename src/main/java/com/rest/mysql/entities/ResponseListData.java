@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class ResponseListData {
 
 	private Pagination pagination;
-	private List<Object> data;
+	private List<User> data;
 	private Error error;
 
 	public Pagination getPagination() {
@@ -21,11 +21,11 @@ public class ResponseListData {
 		this.pagination = pagination;
 	}
 
-	public List<Object> getData() {
+	public List<User> getData() {
 		return data;
 	}
 
-	public void setData(List<Object> data) {
+	public void setData(List<User> data) {
 		this.data = data;
 	}
 

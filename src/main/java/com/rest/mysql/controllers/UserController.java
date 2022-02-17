@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -77,7 +78,7 @@ public class UserController {
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Custom-Header", "foo");
 
-		ResponseData data = userTemplate.createUser(payload);
+		ResponseData data = userTemplate.createUser(null, payload);
 
 		HttpStatus status = null;
 		if (data.getError() != null) {
@@ -87,6 +88,28 @@ public class UserController {
 		}
 
 		ResponseEntity<ResponseData> response = new ResponseEntity<ResponseData>(data, responseHeaders, status);
+		return response;
+	}
+	
+	@PutMapping(value = "/users/{id}")
+	public ResponseEntity<ResponseData> insertUser(@PathVariable(name = "id", required = true) String id,
+			@RequestBody(required = true) User payload) {
+		
+		ResponseData data = null;
+		HttpStatus status = null;
+		if (userTemplate.userExists(id)) {
+			data = userTemplate.updateUser(id, payload, false);
+			status = HttpStatus.OK;
+		} else {
+			data = userTemplate.createUser(id, payload);
+			status = HttpStatus.CREATED;
+		}
+		
+		if (data.getError() != null) {
+			status = data.getError().getStatus();
+		}
+
+		ResponseEntity<ResponseData> response = new ResponseEntity<ResponseData>(data, null, status);
 		return response;
 	}
 

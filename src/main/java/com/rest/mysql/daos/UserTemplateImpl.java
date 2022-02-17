@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +87,7 @@ public class UserTemplateImpl implements UserTemplate {
 
 			List<Map<String, Object>> listMap = namedParameterJdbcTemplate.queryForList(findQuery, mapQuery);
 
-			List<Object> listUsers = new ArrayList<>();
+			List<User> listUsers = new ArrayList<>();
 			for (Map<String, Object> map : listMap) {
 				listUsers.add(UserConvertionHelper.createUserObject(map));
 			}
@@ -103,7 +104,7 @@ public class UserTemplateImpl implements UserTemplate {
 			error.setStatus(HttpStatus.SERVICE_UNAVAILABLE);
 			data.setError(error);
 		}
-		
+
 		return data;
 	}
 
@@ -136,19 +137,48 @@ public class UserTemplateImpl implements UserTemplate {
 		return data;
 	}
 
-	private static final String GENERATE_UUID = "SELECT UUID() AS ID;";
+	private static final String FIND_AND_SELECT_ID_BY_ID = "SELECT id FROM users WHERE id = :id";
+
+	@Override
+	public boolean userExists(String id) {
+		boolean userExists = false;
+
+		Map<String, Object> query = new HashMap<>();
+		query.put("id", id);
+
+		try {
+			String foundId = namedParameterJdbcTemplate.queryForObject(FIND_AND_SELECT_ID_BY_ID, query, String.class);
+			if (foundId.equals(id)) {
+				userExists = true;
+			}
+		}
+		catch (EmptyResultDataAccessException e) {
+			LOGGER.info("Id not exits");
+		}
+		
+		return userExists;
+	}
+
 	private static final String CREATE_USER = "INSERT INTO users (id, email, roles, is_active, name, last_name, birthday, gender) "
 			+ "VALUES (:id, :email, :roles, :is_active, :name, :last_name, :birthday, :gender);";
 
 	@Override
-	public ResponseData createUser(User user) {
+	public ResponseData createUser(String id, User user) {
 		ResponseData data = new ResponseData();
 
 		MapSqlParameterSource query = UserConvertionHelper.createUserMap(user);
 		try {
-			String id = namedParameterJdbcTemplate.queryForObject(GENERATE_UUID, new HashMap<>(), String.class);
+			// If the id is not informed, generate a new id
+			if (id == null || id.isEmpty()) {
+				id = UUID.randomUUID().toString();
+			}
+			// Check if the provided id has the right format
+			else if (!UUID.fromString(id).toString().equals(id)) {
+				throw new IllegalArgumentException("Invalid UUID string: ".concat(id));
+			}
 			query.addValue("id", id, Types.VARCHAR);
 
+			// Execute the query
 			int result = namedParameterJdbcTemplate.update(CREATE_USER, query);
 			if (result == 1) {
 				return getUser(id);
@@ -157,6 +187,12 @@ public class UserTemplateImpl implements UserTemplate {
 					private static final long serialVersionUID = 6981224632546830983L;
 				};
 			}
+		} catch (IllegalArgumentException e) {
+			Error error = new Error();
+			error.setName(e.getClass().getSimpleName());
+			error.setMessage(e.getMessage());
+			error.setStatus(HttpStatus.BAD_REQUEST);
+			data.setError(error);
 		} catch (DuplicateKeyException e) {
 			Error error = new Error();
 			error.setName(e.getClass().getSimpleName());
@@ -188,6 +224,7 @@ public class UserTemplateImpl implements UserTemplate {
 
 		try {
 			int result = namedParameterJdbcTemplate.update(UPDATE_USER, query);
+
 			if (rollback) {
 				TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
 				throw new DataAccessException("Operation rolled back") {
